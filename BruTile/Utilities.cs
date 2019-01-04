@@ -49,6 +49,10 @@ namespace BruTile
             //bigger than biggest
             if (orderedResolutions.First().Value.UnitsPerPixel < unitsPerPixel) return orderedResolutions.First().Key;
 
+            // use the next lower option (bias towards greater resolution at expense of performance
+            if (orderedResolutions.Any(x => x.Value.UnitsPerPixel < unitsPerPixel))
+                return orderedResolutions.First(x => x.Value.UnitsPerPixel < unitsPerPixel).Key;
+            
             string result = null;
             double resultDistance = double.MaxValue;
             foreach (var current in orderedResolutions)
