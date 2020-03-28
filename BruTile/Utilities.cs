@@ -7,9 +7,18 @@ using System.Linq;
 using System.Reflection;
 
 namespace BruTile
-{
+{   
+    public enum ZoomResolutionBias
+    {
+        HighResolution,
+        MidwayResolution,
+        MidwayLogResolution
+    }
+
     public static class Utilities
     {
+        public static ZoomResolutionBias ZoomResolutionBiasValue = ZoomResolutionBias.MidwayResolution;
+
         /// <summary>
         ///   Reads data from a stream until the end is reached. The
         ///   data is returned as a byte array. An IOException is
@@ -49,23 +58,49 @@ namespace BruTile
             //bigger than biggest
             if (orderedResolutions.First().Value.UnitsPerPixel < unitsPerPixel) return orderedResolutions.First().Key;
 
-            //// use the next lower option (bias towards greater resolution at expense of performance
-            //if (orderedResolutions.Any(x => x.Value.UnitsPerPixel < unitsPerPixel))
-            //    return orderedResolutions.First(x => x.Value.UnitsPerPixel < unitsPerPixel).Key;
-            
-            string result = null;
-            double resultDistance = double.MaxValue;
-            foreach (var current in orderedResolutions)
+            if (ZoomResolutionBiasValue == ZoomResolutionBias.HighResolution && orderedResolutions.Any(x => x.Value.UnitsPerPixel < unitsPerPixel))
             {
-                double distance = Math.Abs(current.Value.UnitsPerPixel - unitsPerPixel);
-                if (distance < resultDistance)
-                {
-                    result = current.Key;
-                    resultDistance = distance;
-                }
+                return orderedResolutions.First(x => x.Value.UnitsPerPixel < unitsPerPixel).Key;                    
             }
-            if (result == null) throw new Exception("Unexpected error when calculating nearest level");
-            return result;
+            else if (ZoomResolutionBiasValue == ZoomResolutionBias.MidwayLogResolution)
+            {
+                string result = null;
+                double resultDistance = double.MaxValue;
+
+                var unitsPerPixelLog = Math.Log10(unitsPerPixel);
+                foreach (var current in orderedResolutions)
+                {
+                    // calc the distances from this zoom level resolution 
+                    // using Log10
+                    var currentUnitsLog = Math.Log10(current.Value.UnitsPerPixel);
+                    double distance = Math.Abs(currentUnitsLog - unitsPerPixelLog);
+                    if (distance < resultDistance)
+                    {
+                        result = current.Key;
+                        resultDistance = distance;
+                    }
+                }
+                if (result == null) throw new Exception("Unexpected error when calculating nearest level");
+                return result;
+            }
+            else
+            {
+                string result = null;
+                double resultDistance = double.MaxValue;
+                foreach (var current in orderedResolutions)
+                {
+                    double distance = Math.Abs(current.Value.UnitsPerPixel - unitsPerPixel);
+                    if (distance < resultDistance)
+                    {
+                        result = current.Key;
+                        resultDistance = distance;
+                    }
+                }
+                if (result == null) throw new Exception("Unexpected error when calculating nearest level");
+                return result;
+            }
+            
+            
         }
 
         public static string Version

@@ -179,9 +179,27 @@ namespace BruTile.MbTiles
 
         private static int[] ReadZoomLevels(SQLiteConnection connection)
         {
-            var sql = "select distinct zoom_level as level from tiles";
-            var zoomLevelsObjects = connection.Query<ZoomLevel>(sql);
-            var zoomLevels = zoomLevelsObjects.Select(z => z.Level).ToArray();
+            int[] zoomLevels;
+            try
+            {
+                var sql = "select distinct zoom_level as level from tiles";
+                var zoomLevelsObjects = connection.Query<ZoomLevel>(sql);
+                zoomLevels = zoomLevelsObjects.Select(z => z.Level).ToArray();
+            }
+            catch (Exception e)
+            {
+                // use metadata instead
+                var minZoom = connection.Query<int>("SELECT \"value\" FROM metadata WHERE \"name\"=\"minzoom\";").Single();
+                var maxZoom = connection.Query<int>("SELECT \"value\" FROM metadata WHERE \"name\"=\"maxzoom\";").Single();
+
+                var zooms = new List<int>();
+                for (var i = minZoom; i <= maxZoom; i++)
+                {
+                    zooms.Add(i);
+                }
+
+                zoomLevels = zooms.ToArray();
+            }
             return zoomLevels;
         }
 
