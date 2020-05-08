@@ -13,13 +13,14 @@ namespace BruTile.Web
         private readonly HttpClient _httpClient = new HttpClient();
 
         public HttpTileProvider(IRequest request = null, IPersistentCache<byte[]> persistentCache = null,
-            Func<Uri, byte[]> fetchTile = null)
+            Func<Uri, byte[]> fetchTile = null, string userAgent = null)
         {
             _request = request ?? new NullRequest();
             PersistentCache = persistentCache ?? new NullCache();
             _fetchTile = fetchTile ?? FetchTile;
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent ?? "BruTile Tile Library");
         }
-
+        
         private byte[] FetchTile(Uri arg)
         {
             return _httpClient.GetByteArrayAsync(arg).ConfigureAwait(false).GetAwaiter().GetResult();
